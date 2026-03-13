@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>cernline.com | dashboard</title>
+    <meta name="description" content="dedicated to the ones who had to depart. see you down the road.">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="bg-layer" class="bg-layer"></div>
+    <div class="container">
+        <div class="site-label">cernline</div>
+
+        <main class="dashboard" id="dashboard">
+            <div class="panel widget-clock tilt-panel" id="clock-panel">
+                <div class="clock-display" id="clock-display">00:00</div>
+            </div>
+
+            <div class="panel widget-calendar tilt-panel" id="calendar-panel">
+                <div class="calendar-display">
+                    <div class="calendar-header" id="calendar-month-year">March 2026</div>
+                    <div class="calendar-weekdays">
+                        <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                    </div>
+                    <div class="calendar-grid" id="calendar-grid">
+                        <!-- Filled by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel widget-text tilt-panel">
+                <div class="text-content">
+                    <p class="headline">dedicated to the ones who had to depart.</p>
+                    <p class="subheadline">see you down the road.</p>
+                </div>
+            </div>
+
+            <div class="panel widget-spotify tilt-panel">
+                <i class="fa-brands fa-spotify spotify-icon-floating"></i>
+                <div class="spotify-header-text">instead of your heartbeat</div>
+                <div class="spotify-embed-container"
+                    style="width: 100%; display: flex; align-items: flex-end; margin-top: 5px;">
+                    <iframe
+                        src="https://open.spotify.com/embed/track/44zGAo63hhc3xo0rlBweRo?utm_source=generator&theme=0"
+                        width="100%" height="152" frameBorder="0" allowfullscreen=""
+                        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                        loading="lazy" style="border-radius: 12px; background: transparent;"></iframe>
+                </div>
+            </div>
+
+            <div class="panel widget-note sticky-note tilt-panel">
+                <i class="fa-regular fa-note-sticky note-icon-floating"></i>
+                <div class="note-content">
+                    <p>tüm samanyolu altüst olsa<br>bendeki yerin asla değişmez<br><br>milyon yıl geçse<br>ışığından
+                        tanır bulurum seni</p>
+                </div>
+            </div>
+
+            <div class="panel widget-note sticky-note tilt-panel">
+                <i class="fa-regular fa-note-sticky note-icon-floating"></i>
+                <div class="note-content">
+                    <p>my love for you shall<br>live forever<br><br>you, however, did not</p>
+                </div>
+            </div>
+
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+
+</html>

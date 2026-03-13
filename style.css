@@ -1,0 +1,388 @@
+:root {
+    --bg-color-base: #2B0A1E;
+    /* deep dark cherry */
+    --panel-bg: rgba(43, 10, 30, 0.75);
+    /* #2B0A1E 75% for iOS 26 transparent depth */
+    --note-bg: rgba(43, 10, 30, 0.9);
+    --text-primary: #F5F5F5;
+    --text-glow: rgba(245, 245, 245, 0.4);
+    --border-radius: 20px;
+    /* Increased for iOS feel */
+    --font-apple: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro", "San Francisco", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-apple);
+    background-color: var(--bg-color-base);
+    color: var(--text-primary);
+    overflow-x: hidden;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.bg-layer {
+    position: fixed;
+    top: -5%;
+    left: -5%;
+    width: 110%;
+    height: 110%;
+    background: radial-gradient(circle at 50% 50%, #2B0A1E 0%, #15030E 100%);
+    z-index: 0;
+    transition: transform 0.1s ease-out;
+}
+
+.bg-layer::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('data:image/svg+xml;utf8,<svg width="4" height="4" viewBox="0 0 4 4" xmlns="http://www.w3.org/2000/svg"><circle cx="2" cy="2" r="1" fill="rgba(255,255,255,0.02)"/></svg>');
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 1200px;
+    padding: 30px 20px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.site-label {
+    font-weight: 500;
+    font-size: 2.5rem;
+    letter-spacing: -1px;
+    opacity: 0.95;
+    text-align: center;
+    margin-bottom: 35px;
+    color: var(--text-primary);
+    text-shadow: 0 0 25px var(--text-glow);
+}
+
+.dashboard {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-auto-rows: minmax(180px, auto);
+    gap: 24px;
+    flex: 1;
+}
+
+.panel {
+    background: var(--panel-bg);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border-radius: var(--border-radius);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    animation: fadeIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    opacity: 0;
+    transform-style: preserve-3d;
+    transform: perspective(1000px) rotateX(0) rotateY(0);
+    transition: box-shadow 0.4s ease, border-color 0.4s ease, transform 0.2s ease-out;
+}
+
+.panel:hover {
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Centralized subtle glowing highlight on hover */
+.panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: var(--border-radius);
+    background: radial-gradient(600px circle at var(--mouse-x, 0) var(--mouse-y, 0), rgba(255, 255, 255, 0.08), transparent 40%);
+    pointer-events: none;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.panel:hover::before {
+    opacity: 1;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.98) perspective(1000px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1) perspective(1000px);
+    }
+}
+
+.widget-clock {
+    grid-column: span 1;
+    grid-row: span 1;
+    justify-content: center;
+    align-items: center;
+    animation-delay: 0.1s;
+}
+
+.clock-display {
+    font-size: 4rem;
+    font-weight: 500;
+    text-shadow: 0 0 20px var(--text-glow);
+    letter-spacing: -2px;
+}
+
+.widget-calendar {
+    grid-column: span 1;
+    grid-row: span 1;
+    text-align: center;
+    justify-content: center;
+    animation-delay: 0.15s;
+    padding: 20px;
+}
+
+.calendar-display {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+}
+
+.calendar-header {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #E95E7C;
+    /* Theme-compatible cherry pink */
+    margin-bottom: 12px;
+    letter-spacing: 0.5px;
+    width: 100%;
+    text-align: left;
+    padding-left: 5px;
+}
+
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    width: 100%;
+    font-size: 0.75rem;
+    font-weight: 600;
+    opacity: 0.7;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    width: 100%;
+    gap: 4px;
+}
+
+.calendar-day {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    aspect-ratio: 1;
+    font-size: 0.95rem;
+    font-weight: 400;
+    border-radius: 50%;
+    cursor: default;
+    transition: background 0.2s;
+}
+
+.calendar-day:not(.empty-day):hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.calendar-day.empty-day {
+    opacity: 0;
+}
+
+.calendar-day.today {
+    background: #E95E7C;
+    /* Matching cherry pink */
+    color: #FFF;
+    font-weight: 600;
+    box-shadow: 0 0 10px rgba(233, 94, 124, 0.5);
+}
+
+.widget-text {
+    grid-column: span 2;
+    grid-row: span 1;
+    justify-content: center;
+    animation-delay: 0.2s;
+}
+
+.text-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+    padding: 0 10px;
+}
+
+.headline {
+    font-size: 2rem;
+    font-weight: 500;
+    text-shadow: 0 0 25px var(--text-glow);
+    margin-bottom: 8px;
+    letter-spacing: -0.8px;
+    line-height: 1.2;
+}
+
+.subheadline {
+    font-size: 1.2rem;
+    font-weight: 400;
+    opacity: 0.8;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.15);
+    letter-spacing: -0.3px;
+}
+
+.widget-spotify {
+    grid-column: span 2;
+    grid-row: span 1;
+    animation-delay: 0.25s;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.spotify-icon-floating {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    color: #FFFFFF;
+    font-size: 1.4rem;
+    opacity: 0.9;
+    z-index: 5;
+}
+
+.spotify-header-text {
+    font-size: 1.8rem;
+    font-weight: 500;
+    text-shadow: 0 0 25px var(--text-glow);
+    letter-spacing: -0.8px;
+    margin-bottom: 5px;
+    padding-right: 30px;
+    color: var(--text-primary);
+    opacity: 0.95;
+    line-height: 1.2;
+}
+
+
+
+.widget-note {
+    grid-column: span 1;
+    grid-row: span 1;
+    background: var(--note-bg);
+    animation-delay: 0.3s;
+    position: relative;
+}
+
+.note-icon-floating {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 1.1rem;
+    opacity: 0.5;
+}
+
+.note-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+    font-size: 1.05rem;
+    line-height: 1.5;
+    font-weight: 400;
+    padding-top: 5px;
+}
+
+.note-content p {
+    flex: 1;
+    overflow-y: auto;
+    color: #FFF;
+    opacity: 0.95;
+}
+
+.note-content p::-webkit-scrollbar {
+    width: 3px;
+}
+
+.note-content p::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+.note-author {
+    font-size: 0.85rem;
+    opacity: 0.6;
+    margin-top: 15px;
+    text-align: right;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+}
+
+
+
+@media (max-width: 1024px) {
+    .dashboard {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .widget-text {
+        grid-column: span 3;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard {
+        grid-template-columns: repeat(2, 1fr);
+        padding: 10px;
+    }
+
+    .widget-text,
+    .widget-spotify {
+        grid-column: span 2;
+    }
+
+    .panel {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .panel {
+        min-height: 160px;
+    }
+}
