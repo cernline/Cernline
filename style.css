@@ -408,3 +408,56 @@ body {
         min-height: 160px;
     }
 }
+
+/* ── Pixel Character ── */
+#pixel-character {
+    position: fixed;
+    right: 28px;
+    bottom: 0;
+    z-index: 99999;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+    will-change: transform;
+}
+
+#pixel-character img {
+    height: 220px;
+    width: auto;
+    display: block;
+    pointer-events: none;
+}
+
+/* Idle breathing */
+#pixel-character.state-idle img {
+    animation: charBreathe 2s ease-in-out infinite;
+}
+
+@keyframes charBreathe {
+    0%, 100% { transform: scaleY(1); }
+    50%      { transform: scaleY(1.02); }
+}
+
+/* Dragging */
+#pixel-character.state-drag {
+    cursor: grabbing;
+    transition: none;
+}
+
+/* Falling */
+#pixel-character.state-fall img {
+    animation: charFall 1.8s ease-in forwards;
+}
+
+@keyframes charFall {
+    0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+    55%  { transform: translateY(120px) rotate(12deg); opacity: 0.85; }
+    85%  { transform: translateY(195px) rotate(18deg); opacity: 0.75; }
+    100% { transform: translateY(180px) rotate(15deg); opacity: 0.78; }
+}
+
+/* Return transition (applied after fall ends) */
+#pixel-character.state-return {
+    transition: right 0.5s ease-out, bottom 0.5s ease-out, left 0.5s ease-out, top 0.5s ease-out;
+}

@@ -123,3 +123,183 @@ document.addEventListener('DOMContentLoaded', () => {
         bgLayer.style.background = gradient;
     }
 });
+
+/* ── Pixel Character Interaction ── */
+(function () {
+    const el = document.getElementById('pixel-character');
+    if (!el) return;
+    const img = el.querySelector('img');
+
+    const SPRITES = {
+        idle: 'assets/character-idle.png',
+        drag: 'assets/character-drag.png',
+        fall: 'assets/character-fall.png'
+    };
+
+    // Home position values (CSS)
+    const HOME_RIGHT = 28;
+    const HOME_BOTTOM = 0;
+
+    let isDragging = false;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    // Start in idle state
+    setState('idle');
+
+    function setState(state) {
+        el.className = '';
+        el.classList.add('state-' + state);
+        img.src = SPRITES[state];
+    }
+
+    function getHomePosition() {
+        return {
+            left: window.innerWidth - HOME_RIGHT - el.offsetWidth,
+            top: window.innerHeight - HOME_BOTTOM - el.offsetHeight
+        };
+    }
+
+    function resetToHome() {
+        el.style.position = 'fixed';
+        el.style.left = '';
+        el.style.top = '';
+        el.style.right = HOME_RIGHT + 'px';
+        el.style.bottom = HOME_BOTTOM + 'px';
+    }
+
+    /* ── Drag Start ── */
+    function onDragStart(clientX, clientY) {
+        const rect = el.getBoundingClientRect();
+        const clickY = clientY - rect.top;
+
+        // Only allow grabbing from the top half
+        if (clickY > rect.height / 2) return;
+
+        isDragging = true;
+        offsetX = clientX - rect.left;
+        offsetY = clientY - rect.top;
+
+        // Switch to absolute-like fixed positioning using left/top
+        el.style.right = 'auto';
+        el.style.bottom = 'auto';
+        el.style.left = rect.left + 'px';
+        el.style.top = rect.top + 'px';
+        el.style.transition = 'none';
+
+        setState('drag');
+    }
+
+    /* ── Drag Move ── */
+    function onDragMove(clientX, clientY) {
+        if (!isDragging) return;
+        el.style.left = (clientX - offsetX) + 'px';
+        el.style.top = (clientY - offsetY) + 'px';
+    }
+
+    /* ── Drag End ── */
+    function onDragEnd() {
+        if (!isDragging) return;
+        isDragging = false;
+
+        // 1. Pin element at its current drop position using left/top
+        const rect = el.getBoundingClientRect();
+        el.style.right = 'auto';
+        el.style.bottom = 'auto';
+        el.style.left = rect.left + 'px';
+        el.style.top = rect.top + 'px';
+        el.style.transition = 'none';
+
+        // 2. Switch to fall sprite
+        img.src = SPRITES.fall;
+
+        // 3. Remove fall class, force reflow, then re-add to guarantee animation restarts
+        el.classList.remove('state-drag', 'state-fall', 'state-idle', 'state-return');
+        void el.offsetHeight; // force reflow
+        el.classList.add('state-fall');
+
+        // 4. Clear any lingering inline styles on img from previous cycles
+        img.style.animation = '';
+        img.style.transform = '';
+        img.style.opacity = '';
+
+        // 5. Listen for animation end (one-shot) then return home
+        function onFallDone() {
+            img.removeEventListener('animationend', onFallDone);
+
+            // Brief pause before returning home
+            setTimeout(function () {
+                const home = getHomePosition();
+
+                // Switch to idle sprite for the return journey
+                img.src = SPRITES.idle;
+                img.style.animation = 'none';
+                img.style.transform = '';
+                img.style.opacity = '';
+
+                // Apply return transition class
+                el.classList.remove('state-fall');
+                void el.offsetHeight; // force reflow before transition
+                el.classList.add('state-return');
+
+                // Set destination to home
+                el.style.left = home.left + 'px';
+                el.style.top = home.top + 'px';
+
+                // After transition completes, snap back to CSS fixed positioning
+                function onReturnDone() {
+                    el.removeEventListener('transitionend', onReturnDone);
+                    el.classList.remove('state-return');
+                    el.style.transition = '';
+                    img.style.animation = '';
+                    resetToHome();
+                    setState('idle');
+                }
+                el.addEventListener('transitionend', onReturnDone, { once: true });
+
+                // Safety fallback in case transitionend doesn't fire (e.g. already at home)
+                setTimeout(function () {
+                    if (el.classList.contains('state-return')) {
+                        onReturnDone();
+                    }
+                }, 600);
+            }, 400);
+        }
+        img.addEventListener('animationend', onFallDone, { once: true });
+    }
+
+    /* ── Mouse Events ── */
+    el.addEventListener('mousedown', function (e) {
+        e.preventDefault();
+        onDragStart(e.clientX, e.clientY);
+    });
+
+    document.addEventListener('mousemove', function (e) {
+        if (isDragging) {
+            e.preventDefault();
+            onDragMove(e.clientX, e.clientY);
+        }
+    });
+
+    document.addEventListener('mouseup', function () {
+        onDragEnd();
+    });
+
+    /* ── Touch Events ── */
+    el.addEventListener('touchstart', function (e) {
+        const touch = e.touches[0];
+        onDragStart(touch.clientX, touch.clientY);
+    }, { passive: true });
+
+    document.addEventListener('touchmove', function (e) {
+        if (isDragging) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            onDragMove(touch.clientX, touch.clientY);
+        }
+    }, { passive: false });
+
+    document.addEventListener('touchend', function () {
+        onDragEnd();
+    });
+})();
