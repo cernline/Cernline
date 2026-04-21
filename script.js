@@ -136,13 +136,27 @@ document.addEventListener('DOMContentLoaded', () => {
         fall: 'assets/character-fall.png'
     };
 
-    // Home position values (CSS)
+    // Home position – computed once on load as left/top pixel values
+    // so the character always returns to exactly the same spot.
     const HOME_RIGHT = 28;
     const HOME_BOTTOM = 0;
+    let homeLeft, homeTop;
+
+    function computeHome() {
+        homeLeft = window.innerWidth - HOME_RIGHT - el.offsetWidth;
+        homeTop  = window.innerHeight - HOME_BOTTOM - el.offsetHeight;
+    }
+    computeHome();                       // calculate once on load
+    window.addEventListener('resize', computeHome); // recalc on resize
 
     let isDragging = false;
     let offsetX = 0;
     let offsetY = 0;
+
+    // Apply home position immediately (left/top only, no right/bottom ever)
+    el.style.position = 'fixed';
+    el.style.left = homeLeft + 'px';
+    el.style.top  = homeTop  + 'px';
 
     // Start in idle state
     setState('idle');
@@ -154,18 +168,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getHomePosition() {
-        return {
-            left: window.innerWidth - HOME_RIGHT - el.offsetWidth,
-            top: window.innerHeight - HOME_BOTTOM - el.offsetHeight
-        };
+        return { left: homeLeft, top: homeTop };
     }
 
     function resetToHome() {
         el.style.position = 'fixed';
-        el.style.left = '';
-        el.style.top = '';
-        el.style.right = HOME_RIGHT + 'px';
-        el.style.bottom = HOME_BOTTOM + 'px';
+        el.style.left   = homeLeft + 'px';
+        el.style.top    = homeTop  + 'px';
+        el.style.right  = 'auto';
+        el.style.bottom = 'auto';
     }
 
     /* ── Drag Start ── */

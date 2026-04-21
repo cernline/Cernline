@@ -412,14 +412,11 @@ body {
 /* ── Pixel Character ── */
 #pixel-character {
     position: fixed;
-    right: 28px;
-    bottom: 0;
     z-index: 99999;
     cursor: grab;
     user-select: none;
     -webkit-user-select: none;
     touch-action: none;
-    will-change: transform;
 }
 
 #pixel-character img {
@@ -429,15 +426,7 @@ body {
     pointer-events: none;
 }
 
-/* Idle breathing */
-#pixel-character.state-idle img {
-    animation: charBreathe 2s ease-in-out infinite;
-}
-
-@keyframes charBreathe {
-    0%, 100% { transform: scaleY(1); }
-    50%      { transform: scaleY(1.02); }
-}
+/* Idle – perfectly still, no animation */
 
 /* Dragging */
 #pixel-character.state-drag {
@@ -447,14 +436,13 @@ body {
 
 /* Falling */
 #pixel-character.state-fall img {
-    animation: charFall 1.8s ease-in forwards;
+    animation: charFall 2.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 
 @keyframes charFall {
     0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
-    55%  { transform: translateY(120px) rotate(12deg); opacity: 0.85; }
-    85%  { transform: translateY(195px) rotate(18deg); opacity: 0.75; }
-    100% { transform: translateY(180px) rotate(15deg); opacity: 0.78; }
+    70%  { transform: translateY(190px) rotate(16deg); opacity: 0.78; }
+    100% { transform: translateY(180px) rotate(14deg); opacity: 0.8; }
 }
 
 /* Return transition (applied after fall ends) */
