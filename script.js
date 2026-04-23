@@ -314,3 +314,247 @@ document.addEventListener('DOMContentLoaded', () => {
         onDragEnd();
     });
 })();
+
+/* ── Void Universe Mode ── */
+(function () {
+    const trigger = document.getElementById('c137-trigger');
+    if (!trigger) return;
+
+    let voidActive = false;
+    let canvas = null;
+    let ctx = null;
+    let charEl = null;
+    let animFrameId = null;
+    let stars = [];
+    const STAR_COUNT = 400;
+
+    // Star factory
+    function createStars(width, height) {
+        stars = [];
+        for (let i = 0; i < STAR_COUNT; i++) {
+            stars.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                radius: 0.5 + Math.random() * 1.5,
+                baseAlpha: 0.3 + Math.random() * 0.7,
+                twinkleSpeed: 0.002 + Math.random() * 0.006,
+                twinkleOffset: Math.random() * Math.PI * 2,
+                driftX: (Math.random() - 0.5) * 0.15,
+                driftY: (Math.random() - 0.5) * 0.08,
+                depth: 0.3 + Math.random() * 0.7  // parallax depth factor
+            });
+        }
+    }
+
+    // Draw nebula background
+    function drawNebula(ctx, w, h, time) {
+        // Deep purple nebula — top-left
+        const g1 = ctx.createRadialGradient(w * 0.25, h * 0.35, 0, w * 0.25, h * 0.35, w * 0.5);
+        const pulse1 = 0.04 + Math.sin(time * 0.0003) * 0.015;
+        g1.addColorStop(0, `rgba(25, 5, 40, ${pulse1})`);
+        g1.addColorStop(0.5, `rgba(15, 3, 25, ${pulse1 * 0.5})`);
+        g1.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = g1;
+        ctx.fillRect(0, 0, w, h);
+
+        // Deep teal nebula — bottom-right
+        const g2 = ctx.createRadialGradient(w * 0.75, h * 0.7, 0, w * 0.75, h * 0.7, w * 0.45);
+        const pulse2 = 0.035 + Math.sin(time * 0.0004 + 1.5) * 0.012;
+        g2.addColorStop(0, `rgba(5, 20, 25, ${pulse2})`);
+        g2.addColorStop(0.5, `rgba(3, 12, 18, ${pulse2 * 0.5})`);
+        g2.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = g2;
+        ctx.fillRect(0, 0, w, h);
+
+        // Very faint warm accent — center
+        const g3 = ctx.createRadialGradient(w * 0.5, h * 0.5, 0, w * 0.5, h * 0.5, w * 0.35);
+        const pulse3 = 0.02 + Math.sin(time * 0.00025 + 3) * 0.008;
+        g3.addColorStop(0, `rgba(30, 5, 20, ${pulse3})`);
+        g3.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = g3;
+        ctx.fillRect(0, 0, w, h);
+    }
+
+    // Draw stars with drift and twinkle
+    function drawStars(ctx, w, h, time) {
+        for (let i = 0; i < stars.length; i++) {
+            const s = stars[i];
+
+            // Drift movement
+            s.x += s.driftX * s.depth;
+            s.y += s.driftY * s.depth;
+
+            // Wrap around edges
+            if (s.x < -5) s.x = w + 5;
+            if (s.x > w + 5) s.x = -5;
+            if (s.y < -5) s.y = h + 5;
+            if (s.y > h + 5) s.y = -5;
+
+            // Twinkle
+            const alpha = s.baseAlpha * (0.5 + 0.5 * Math.sin(time * s.twinkleSpeed + s.twinkleOffset));
+
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+            ctx.fill();
+        }
+    }
+
+    // Draw a 4-pointed sparkle shape at (cx, cy) with given size
+    function drawSparkle(ctx, cx, cy, height, width) {
+        var hw = width / 2;
+        var hh = height / 2;
+        // Pinch factor — how thin the waist is (smaller = sharper points)
+        var pinch = 0.18;
+
+        ctx.beginPath();
+        // Top point
+        ctx.moveTo(cx, cy - hh);
+        // Curve to right point
+        ctx.quadraticCurveTo(cx + hw * pinch, cy - hh * pinch, cx + hw, cy);
+        // Curve to bottom point
+        ctx.quadraticCurveTo(cx + hw * pinch, cy + hh * pinch, cx, cy + hh);
+        // Curve to left point
+        ctx.quadraticCurveTo(cx - hw * pinch, cy + hh * pinch, cx - hw, cy);
+        // Curve back to top point
+        ctx.quadraticCurveTo(cx - hw * pinch, cy - hh * pinch, cx, cy - hh);
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    // Draw the special fixed sparkle cluster
+    function drawSpecialStar(ctx, w, h) {
+        var cx = w * 0.70;
+        var cy = h * 0.18;
+
+        ctx.save();
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowColor = 'rgba(255, 255, 255, 0.7)';
+        ctx.shadowBlur = 14;
+
+        // Main sparkle — 20px tall, 14px wide (vertical elongated)
+        drawSparkle(ctx, cx, cy, 20, 14);
+
+        // Secondary sparkle — 40% size, offset upper-right
+        ctx.shadowBlur = 8;
+        drawSparkle(ctx, cx + 16, cy - 12, 8, 5.6);
+
+        ctx.restore();
+    }
+
+    // Animation loop
+    function animate(time) {
+        if (!ctx || !canvas) return;
+        const w = canvas.width;
+        const h = canvas.height;
+
+        ctx.clearRect(0, 0, w, h);
+        drawNebula(ctx, w, h, time);
+        drawStars(ctx, w, h, time);
+        drawSpecialStar(ctx, w, h);
+
+        animFrameId = requestAnimationFrame(animate);
+    }
+
+    // Handle resize
+    function onResize() {
+        if (!canvas) return;
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        createStars(canvas.width, canvas.height);
+    }
+
+    // Enter void
+    function enterVoid() {
+        if (voidActive) return;
+        voidActive = true;
+
+        // Create canvas
+        canvas = document.createElement('canvas');
+        canvas.id = 'void-canvas';
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        document.body.appendChild(canvas);
+        ctx = canvas.getContext('2d');
+
+        createStars(canvas.width, canvas.height);
+
+        // Create character
+        charEl = document.createElement('div');
+        charEl.id = 'void-character';
+        const img = document.createElement('img');
+        img.src = 'assets/character-void.png';
+        img.alt = 'void character';
+        img.draggable = false;
+        charEl.appendChild(img);
+        document.body.appendChild(charEl);
+
+        // Listen for click to exit — prevent any movement artifacts
+        charEl.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            exitVoid();
+        });
+        charEl.addEventListener('mousedown', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+
+        // Start animation
+        animFrameId = requestAnimationFrame(animate);
+
+        // Resize handler
+        window.addEventListener('resize', onResize);
+
+        // Hide scrollbar for the entire void lifecycle (including exit fade)
+        document.body.style.overflow = 'hidden';
+
+        // Trigger transitions — use rAF to ensure elements are in DOM first
+        requestAnimationFrame(function () {
+            document.body.classList.add('void-active');
+            canvas.classList.add('visible');
+            charEl.classList.add('visible');
+        });
+    }
+
+    // Exit void
+    function exitVoid() {
+        if (!voidActive) return;
+        voidActive = false;
+
+        // Start exit transitions
+        document.body.classList.remove('void-active');
+        if (canvas) canvas.classList.remove('visible');
+        if (charEl) charEl.classList.remove('visible');
+
+        // After transition ends, clean up DOM
+        setTimeout(function () {
+            if (animFrameId) {
+                cancelAnimationFrame(animFrameId);
+                animFrameId = null;
+            }
+
+            if (canvas && canvas.parentNode) {
+                canvas.parentNode.removeChild(canvas);
+            }
+            canvas = null;
+            ctx = null;
+
+            if (charEl && charEl.parentNode) {
+                charEl.parentNode.removeChild(charEl);
+            }
+            charEl = null;
+
+            stars = [];
+            window.removeEventListener('resize', onResize);
+            document.body.style.overflow = '';
+        }, 850); // slightly longer than the 800ms transition
+    }
+
+    // Attach trigger
+    trigger.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (voidActive) return;
+        enterVoid();
+    });
+})();

@@ -28,6 +28,36 @@ body {
     align-items: center;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    scrollbar-color: #3d1229 #1a0612;
+    scrollbar-width: thin;
+}
+
+/* ── Scrollbar — Normal Mode (Webkit) ── */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1a0612;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #3d1229;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #4e1834;
+}
+
+/* ── Scrollbar — Void Mode ── */
+body.void-active {
+    scrollbar-width: none;
+    overflow-y: hidden;
+}
+
+body.void-active::-webkit-scrollbar {
+    display: none;
 }
 
 .bg-layer {
@@ -448,4 +478,86 @@ body {
 /* Return transition (applied after fall ends) */
 #pixel-character.state-return {
     transition: right 0.5s ease-out, bottom 0.5s ease-out, left 0.5s ease-out, top 0.5s ease-out;
+}
+
+/* ── C137 Void Trigger ── */
+#c137-trigger {
+    pointer-events: auto;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+}
+
+#c137-trigger:hover {
+    opacity: 1;
+    text-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
+}
+
+/* ── Void Universe Mode ── */
+.bg-layer {
+    transition: background 800ms ease, transform 0.1s ease-out;
+}
+
+body.void-active .bg-layer {
+    background: radial-gradient(circle at 50% 50%, #0a0510 0%, #020104 100%) !important;
+}
+
+body.void-active .container {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 800ms ease;
+}
+
+body.void-active #pixel-character {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 800ms ease;
+}
+
+.container {
+    transition: opacity 800ms ease;
+}
+
+#pixel-character {
+    transition: opacity 800ms ease;
+}
+
+/* Void canvas */
+#void-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 10000;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 800ms ease;
+}
+
+#void-canvas.visible {
+    opacity: 1;
+}
+
+/* Void character */
+#void-character {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10001;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 800ms ease;
+    pointer-events: none;
+}
+
+#void-character.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+#void-character img {
+    width: 280px;
+    height: auto;
+    display: block;
 }
