@@ -664,91 +664,97 @@ document.addEventListener('DOMContentLoaded', () => {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         masterGain = audioCtx.createGain();
         masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
-        masterGain.gain.linearRampToValueAtTime(1.0, audioCtx.currentTime + 0.5);
+        masterGain.gain.linearRampToValueAtTime(1.0, audioCtx.currentTime + 0.8);
         masterGain.connect(audioCtx.destination);
 
-        const noiseBuffer = createNoiseBuffer(audioCtx, 2);
+        const noiseBuffer = createNoiseBuffer(audioCtx, 3);
 
-        // Layer 1: bandpass ~800Hz
+        // Layer 1: dense rain body — lowpass white noise for the shhh of heavy rain
         const src1 = audioCtx.createBufferSource();
         src1.buffer = noiseBuffer;
         src1.loop = true;
-        const bp1 = audioCtx.createBiquadFilter();
-        bp1.type = 'bandpass';
-        bp1.frequency.value = 800;
-        bp1.Q.value = 0.8;
+        const lp1 = audioCtx.createBiquadFilter();
+        lp1.type = 'lowpass';
+        lp1.frequency.value = 600;
+        lp1.Q.value = 0.5;
         const g1 = audioCtx.createGain();
-        g1.gain.value = 0.022;
-        src1.connect(bp1);
-        bp1.connect(g1);
+        g1.gain.value = 0.035;
+        src1.connect(lp1);
+        lp1.connect(g1);
         g1.connect(masterGain);
         src1.start();
 
-        // Layer 2: bandpass ~1000Hz
+        // Layer 2: mid rain texture — bandpass for the body of the downpour
         const src2 = audioCtx.createBufferSource();
         src2.buffer = noiseBuffer;
         src2.loop = true;
         const bp2 = audioCtx.createBiquadFilter();
         bp2.type = 'bandpass';
         bp2.frequency.value = 1000;
-        bp2.Q.value = 0.8;
+        bp2.Q.value = 0.6;
         const g2 = audioCtx.createGain();
-        g2.gain.value = 0.018;
+        g2.gain.value = 0.025;
         src2.connect(bp2);
         bp2.connect(g2);
         g2.connect(masterGain);
         src2.start();
 
-        // Layer 3: lowpass ~1200Hz for body
+        // Layer 3: high-frequency splash texture — the collective impact of many drops
         const src3 = audioCtx.createBufferSource();
         src3.buffer = noiseBuffer;
         src3.loop = true;
-        const lp3 = audioCtx.createBiquadFilter();
-        lp3.type = 'lowpass';
-        lp3.frequency.value = 1200;
-        lp3.Q.value = 0.8;
+        const bp3 = audioCtx.createBiquadFilter();
+        bp3.type = 'bandpass';
+        bp3.frequency.value = 2800;
+        bp3.Q.value = 1.2;
         const g3 = audioCtx.createGain();
-        g3.gain.value = 0.02;
-        src3.connect(lp3);
-        lp3.connect(g3);
+        g3.gain.value = 0.018;
+        src3.connect(bp3);
+        bp3.connect(g3);
         g3.connect(masterGain);
         src3.start();
 
         noiseSources = [
-            { source: src1, filter: bp1, gain: g1 },
+            { source: src1, filter: lp1, gain: g1 },
             { source: src2, filter: bp2, gain: g2 },
-            { source: src3, filter: lp3, gain: g3 }
+            { source: src3, filter: bp3, gain: g3 }
         ];
 
-        // ── Tap sounds: occasional drop-on-glass ──
+        // Tap layer: many overlapping drops hitting glass simultaneously
+        // Each tap is very short and high-pitched; they fire rapidly and overlap
+        // creating a collective impact texture rather than isolated drops
         function scheduleTap() {
             if (!audioCtx || !rainActive) return;
 
-            const tapSrc = audioCtx.createBufferSource();
-            const tapBuf = createNoiseBuffer(audioCtx, 0.05);
-            tapSrc.buffer = tapBuf;
+            // Fire 2-4 taps at once to simulate clusters of drops hitting together
+            const clusterSize = 2 + Math.floor(Math.random() * 3);
+            for (let i = 0; i < clusterSize; i++) {
+                const tapSrc = audioCtx.createBufferSource();
+                const tapBuf = createNoiseBuffer(audioCtx, 0.035);
+                tapSrc.buffer = tapBuf;
 
-            const tapFilter = audioCtx.createBiquadFilter();
-            tapFilter.type = 'bandpass';
-            tapFilter.frequency.value = 2000 + Math.random() * 2000;
-            tapFilter.Q.value = 1.2;
+                const tapFilter = audioCtx.createBiquadFilter();
+                tapFilter.type = 'bandpass';
+                tapFilter.frequency.value = 2500 + Math.random() * 3500;
+                tapFilter.Q.value = 2.5;
 
-            const tapGain = audioCtx.createGain();
-            tapGain.gain.setValueAtTime(0.015 + Math.random() * 0.015, audioCtx.currentTime);
-            tapGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+                const tapGain = audioCtx.createGain();
+                const vol = 0.025 + Math.random() * 0.03;
+                tapGain.gain.setValueAtTime(vol, audioCtx.currentTime);
+                tapGain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.035);
 
-            tapSrc.connect(tapFilter);
-            tapFilter.connect(tapGain);
-            tapGain.connect(masterGain);
-            tapSrc.start();
-            tapSrc.stop(audioCtx.currentTime + 0.05);
+                tapSrc.connect(tapFilter);
+                tapFilter.connect(tapGain);
+                tapGain.connect(masterGain);
+                tapSrc.start();
+                tapSrc.stop(audioCtx.currentTime + 0.035);
+            }
 
-            const nextDelay = 300 + Math.random() * 600;
+            const nextDelay = 60 + Math.random() * 120;
             tapInterval = setTimeout(scheduleTap, nextDelay);
         }
 
-        // Start first tap after a short delay
-        tapInterval = setTimeout(scheduleTap, 500);
+        tapInterval = setTimeout(scheduleTap, 300);
     }
 
     function stopAudio() {
