@@ -494,6 +494,11 @@ body.void-active::-webkit-scrollbar {
     user-select: none;
     -webkit-user-select: none;
     touch-action: none;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    will-change: transform;
+    visibility: visible;
+    opacity: 1;
 }
 
 #pixel-character img {
@@ -664,7 +669,7 @@ body.void-active #pixel-character {
 }
 
 #frog-img {
-    height: 120px;
+    height: 160px;
     width: auto;
     image-rendering: pixelated;
     display: block;
