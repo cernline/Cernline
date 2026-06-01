@@ -558,3 +558,262 @@ document.addEventListener('DOMContentLoaded', () => {
         enterVoid();
     });
 })();
+
+/* ── Frog Rain Widget ── */
+(function () {
+    const widget = document.getElementById('frog-panel');
+    const img = document.getElementById('frog-img');
+    const canvas = document.getElementById('rain-canvas');
+    const ctx = canvas.getContext('2d');
+    let rainActive = false;
+    let animationId = null;
+
+    // ── Audio state ──
+    let audioCtx = null;
+    let masterGain = null;
+    let noiseSources = [];
+    let tapInterval = null;
+
+    // ── Rain drops ──
+    const DROP_COUNT = 120;
+    const drops = [];
+
+    function createDrop() {
+        return {
+            x: Math.random() * window.innerWidth,
+            y: Math.random() * window.innerHeight * 1.2 - window.innerHeight * 0.2,
+            speed: 5 + Math.random() * 7,
+            width: 2 + Math.random() * 1,          // 2–3px
+            height: 12 + Math.random() * 8,         // 12–20px
+            opacity: 0.35 + Math.random() * 0.15,   // 0.35–0.5
+            drift: 0.8 + Math.random() * 0.6        // slight right angle
+        };
+    }
+
+    function initDrops() {
+        drops.length = 0;
+        for (let i = 0; i < DROP_COUNT; i++) {
+            drops.push(createDrop());
+        }
+    }
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+
+    function drawRain() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        for (const d of drops) {
+            ctx.save();
+            // Light blue / white pixel-style raindrops
+            const isWhite = Math.random() > 0.7;
+            ctx.fillStyle = isWhite ? 'rgba(220, 235, 245, ' + d.opacity + ')'
+                                    : 'rgba(160, 210, 235, ' + d.opacity + ')';
+
+            // Draw as a vertical rectangle (pixel style — no rotation, just angled movement)
+            ctx.fillRect(Math.round(d.x), Math.round(d.y), Math.round(d.width), Math.round(d.height));
+            ctx.restore();
+
+            // Move
+            d.y += d.speed;
+            d.x += d.drift;
+
+            // Reset when off screen
+            if (d.y > canvas.height + 20) {
+                d.y = -(d.height + Math.random() * 40);
+                d.x = Math.random() * canvas.width;
+                d.speed = 5 + Math.random() * 7;
+                d.opacity = 0.35 + Math.random() * 0.15;
+            }
+            if (d.x > canvas.width + 10) {
+                d.x = -d.width;
+            }
+        }
+
+        animationId = requestAnimationFrame(drawRain);
+    }
+
+    // ── Web Audio: Rain Synthesis ──
+    function createNoiseBuffer(ctx, durationSec) {
+        const size = ctx.sampleRate * durationSec;
+        const buffer = ctx.createBuffer(1, size, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < size; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
+        return buffer;
+    }
+
+    function startAudio() {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        masterGain = audioCtx.createGain();
+        masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
+        masterGain.gain.linearRampToValueAtTime(1.0, audioCtx.currentTime + 0.5);
+        masterGain.connect(audioCtx.destination);
+
+        const noiseBuffer = createNoiseBuffer(audioCtx, 2);
+
+        // Layer 1: bandpass ~800Hz
+        const src1 = audioCtx.createBufferSource();
+        src1.buffer = noiseBuffer;
+        src1.loop = true;
+        const bp1 = audioCtx.createBiquadFilter();
+        bp1.type = 'bandpass';
+        bp1.frequency.value = 800;
+        bp1.Q.value = 0.8;
+        const g1 = audioCtx.createGain();
+        g1.gain.value = 0.022;
+        src1.connect(bp1);
+        bp1.connect(g1);
+        g1.connect(masterGain);
+        src1.start();
+
+        // Layer 2: bandpass ~1000Hz
+        const src2 = audioCtx.createBufferSource();
+        src2.buffer = noiseBuffer;
+        src2.loop = true;
+        const bp2 = audioCtx.createBiquadFilter();
+        bp2.type = 'bandpass';
+        bp2.frequency.value = 1000;
+        bp2.Q.value = 0.8;
+        const g2 = audioCtx.createGain();
+        g2.gain.value = 0.018;
+        src2.connect(bp2);
+        bp2.connect(g2);
+        g2.connect(masterGain);
+        src2.start();
+
+        // Layer 3: lowpass ~1200Hz for body
+        const src3 = audioCtx.createBufferSource();
+        src3.buffer = noiseBuffer;
+        src3.loop = true;
+        const lp3 = audioCtx.createBiquadFilter();
+        lp3.type = 'lowpass';
+        lp3.frequency.value = 1200;
+        lp3.Q.value = 0.8;
+        const g3 = audioCtx.createGain();
+        g3.gain.value = 0.02;
+        src3.connect(lp3);
+        lp3.connect(g3);
+        g3.connect(masterGain);
+        src3.start();
+
+        noiseSources = [
+            { source: src1, filter: bp1, gain: g1 },
+            { source: src2, filter: bp2, gain: g2 },
+            { source: src3, filter: lp3, gain: g3 }
+        ];
+
+        // ── Tap sounds: occasional drop-on-glass ──
+        function scheduleTap() {
+            if (!audioCtx || !rainActive) return;
+
+            const tapSrc = audioCtx.createBufferSource();
+            const tapBuf = createNoiseBuffer(audioCtx, 0.05);
+            tapSrc.buffer = tapBuf;
+
+            const tapFilter = audioCtx.createBiquadFilter();
+            tapFilter.type = 'bandpass';
+            tapFilter.frequency.value = 2000 + Math.random() * 2000;
+            tapFilter.Q.value = 1.2;
+
+            const tapGain = audioCtx.createGain();
+            tapGain.gain.setValueAtTime(0.015 + Math.random() * 0.015, audioCtx.currentTime);
+            tapGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+
+            tapSrc.connect(tapFilter);
+            tapFilter.connect(tapGain);
+            tapGain.connect(masterGain);
+            tapSrc.start();
+            tapSrc.stop(audioCtx.currentTime + 0.05);
+
+            const nextDelay = 300 + Math.random() * 600;
+            tapInterval = setTimeout(scheduleTap, nextDelay);
+        }
+
+        // Start first tap after a short delay
+        tapInterval = setTimeout(scheduleTap, 500);
+    }
+
+    function stopAudio() {
+        if (tapInterval) {
+            clearTimeout(tapInterval);
+            tapInterval = null;
+        }
+
+        if (masterGain && audioCtx) {
+            const now = audioCtx.currentTime;
+            masterGain.gain.setValueAtTime(masterGain.gain.value, now);
+            masterGain.gain.linearRampToValueAtTime(0, now + 0.5);
+
+            // Disconnect everything after fade completes
+            setTimeout(function () {
+                noiseSources.forEach(function (n) {
+                    try { n.source.stop(); } catch (e) {}
+                    try { n.source.disconnect(); } catch (e) {}
+                    try { n.filter.disconnect(); } catch (e) {}
+                    try { n.gain.disconnect(); } catch (e) {}
+                });
+                noiseSources = [];
+
+                try { masterGain.disconnect(); } catch (e) {}
+                masterGain = null;
+
+                if (audioCtx) {
+                    audioCtx.close().catch(function () {});
+                    audioCtx = null;
+                }
+            }, 600);
+        } else {
+            noiseSources = [];
+            masterGain = null;
+            if (audioCtx) {
+                audioCtx.close().catch(function () {});
+                audioCtx = null;
+            }
+        }
+    }
+
+    // ── Toggle ──
+    function startRain() {
+        rainActive = true;
+        resizeCanvas();
+        initDrops();
+        canvas.style.display = 'block';
+        img.style.opacity = '0';
+        img.src = 'assets/frog-rain.png';
+        setTimeout(function () { img.style.opacity = '1'; }, 20);
+        widget.classList.add('rain-active');
+        drawRain();
+        startAudio();
+    }
+
+    function stopRain() {
+        rainActive = false;
+        if (animationId) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+        }
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        canvas.style.display = 'none';
+        img.style.opacity = '0';
+        img.src = 'assets/frog-idle.png';
+        setTimeout(function () { img.style.opacity = '1'; }, 20);
+        widget.classList.remove('rain-active');
+        stopAudio();
+    }
+
+    widget.addEventListener('click', function () {
+        if (rainActive) {
+            stopRain();
+        } else {
+            startRain();
+        }
+    });
+
+    window.addEventListener('resize', function () {
+        if (rainActive) resizeCanvas();
+    });
+})();
