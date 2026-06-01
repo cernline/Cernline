@@ -146,17 +146,31 @@ document.addEventListener('DOMContentLoaded', () => {
         homeLeft = window.innerWidth - HOME_RIGHT - el.offsetWidth;
         homeTop  = window.innerHeight - HOME_BOTTOM - el.offsetHeight;
     }
-    computeHome();                       // calculate once on load
-    window.addEventListener('resize', computeHome); // recalc on resize
+    let resizeTimer = null;
+    window.addEventListener('resize', function () {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function () {
+            computeHome();
+            if (!isDragging) {
+                el.style.transition = 'left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), top 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                el.style.left = homeLeft + 'px';
+                el.style.top  = homeTop  + 'px';
+                setTimeout(function () { el.style.transition = ''; }, 650);
+            }
+        }, 300);
+    });
 
     let isDragging = false;
     let offsetX = 0;
     let offsetY = 0;
 
-    // Apply home position immediately (left/top only, no right/bottom ever)
     el.style.position = 'fixed';
-    el.style.left = homeLeft + 'px';
-    el.style.top  = homeTop  + 'px';
+
+    window.addEventListener('load', function () {
+        computeHome();
+        el.style.left = homeLeft + 'px';
+        el.style.top  = homeTop  + 'px';
+    });
 
     // Start in idle state
     setState('idle');
