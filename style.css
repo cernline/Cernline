@@ -625,3 +625,69 @@ body.void-active #pixel-character {
     height: auto;
     display: block;
 }
+
+/* ── Rain Canvas (fullscreen backdrop) ── */
+
+#rain-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 0;
+    display: none;
+    image-rendering: pixelated;
+}
+
+/* ── Frog Widget Panel ── */
+
+.widget-frog {
+    grid-column: span 1;
+    grid-row: span 1;
+    animation-delay: 0.35s;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.frog-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    height: 100%;
+}
+
+#frog-img {
+    height: 120px;
+    width: auto;
+    image-rendering: pixelated;
+    display: block;
+    transition: opacity 0.2s ease;
+}
+
+.frog-click-label {
+    font-family: var(--font-apple);
+    font-size: 10px;
+    color: #ffffff;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+}
+
+.widget-frog:hover .frog-click-label {
+    opacity: 0.3;
+}
+
+/* Active rain state glow on the panel */
+.widget-frog.rain-active {
+    border-color: rgba(126, 200, 227, 0.35);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), 0 0 18px 4px rgba(126, 200, 227, 0.12);
+}
