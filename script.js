@@ -829,7 +829,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (rainActive) {
             stopRain();
         } else {
-            startRain();
+            const unlockCtx = new (window.AudioContext || window.webkitAudioContext)();
+            unlockCtx.resume().then(function () {
+                unlockCtx.close();
+                startRain();
+            }).catch(function () {
+                startRain();
+            });
         }
     });
 
